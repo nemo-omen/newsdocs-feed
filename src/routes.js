@@ -1,5 +1,10 @@
 import { Dataset, createPlaywrightRouter, KeyValueStore } from 'crawlee';
 import dayjs from 'dayjs';
+import customParseFormat from 'dayjs/plugin/customParseFormat.js';
+import localizedFormat from 'dayjs/plugin/localizedFormat.js';
+dayjs.extend(customParseFormat);
+dayjs.extend(localizedFormat);
+dayjs().format('LLL');
 export const router = createPlaywrightRouter();
 
 router.addDefaultHandler(async ({ page, enqueueLinks, log }) => {
@@ -9,12 +14,11 @@ router.addDefaultHandler(async ({ page, enqueueLinks, log }) => {
         const dateLocator = await article.locator('span.date');
         const headingLocator = await article.locator('h2');
         const linkLocator = await headingLocator.locator('a');
-        const date = await dateLocator.innerText();
-        const dayDate = dayjs(date);
-        log.info(dayDate);
+        const dateString = await dateLocator.innerText();
+        const dayDate = dayjs(dateString, 'MM/DD/YYYY - HH:mm');
         const url = await linkLocator.evaluate((a) => a.href);
         const key = url.replaceAll('/', '_').replaceAll(':', '-');
-        await KeyValueStore.setValue(key, date);
+        await KeyValueStore.setValue(key, dayDate.toString());
     }
 
     await enqueueLinks({
